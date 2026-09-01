@@ -23,10 +23,13 @@ export default function Home() {
     setErro("");
     setCopiado(false);
     try {
+      const entradaEpoch = Math.floor(new Date(entrada).getTime() / 1000); 
+      const saidaEpoch = Math.floor(new Date(saida).getTime() / 1000);
       const resp = await fetch("/api/gerar-senha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nomeHospede, entrada, saida }),
+        body: JSON.stringify({ nomeHospede, entradaEpoch, saidaEpoch }),
+        
       });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar a senha.");
