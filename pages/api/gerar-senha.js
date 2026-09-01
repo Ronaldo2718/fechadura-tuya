@@ -6,14 +6,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: "Método não permitido." });
   }
 
-  const { nomeHospede, entrada, saida } = req.body || {};
+ 
+  const { nomeHospede, entradaEpoch, saidaEpoch } = req.body || {};
 
-  if (!nomeHospede || !entrada || !saida) {
+ 
+    if (!nomeHospede || !entradaEpoch || !saidaEpoch) {
     return res.status(400).json({ erro: "Preencha nome, data/hora de entrada e de saída." });
   }
 
-  const effectiveTime = new Date(entrada);
-  const invalidTime = new Date(saida);
+  const effectiveTime = new Date(entradaEpoch * 1000); 
+  const invalidTime = new Date(saidaEpoch * 1000);
 
   if (Number.isNaN(effectiveTime.getTime()) || Number.isNaN(invalidTime.getTime())) {
     return res.status(400).json({ erro: "Datas inválidas." });
