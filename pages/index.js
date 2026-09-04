@@ -8,10 +8,19 @@ function agoraLocalISO(offsetMinutos = 0) {
   return new Date(d.getTime() - tz).toISOString().slice(0, 16);
 }
 
+function gerarSenhaAleatoria() {
+  let senha = "";
+  for (let i = 0; i < 7; i++) {
+    senha += Math.floor(Math.random() * 10).toString();
+  }
+  return senha;
+}
+
 export default function Home() {
   const [nomeHospede, setNomeHospede] = useState("");
   const [entrada, setEntrada] = useState(agoraLocalISO());
   const [saida, setSaida] = useState(agoraLocalISO(24 * 60));
+  const [senhaEscolhida, setSenhaEscolhida] = useState("");
   const [estado, setEstado] = useState("idle"); // idle | carregando | sucesso | erro
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -28,7 +37,7 @@ export default function Home() {
       const resp = await fetch("/api/gerar-senha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nomeHospede, entradaEpoch, saidaEpoch }),
+        body: JSON.stringify({ nomeHospede, entradaEpoch, saidaEpoch, senha: senhaEscolhida }),
       });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar a senha.");
@@ -52,6 +61,7 @@ export default function Home() {
     setSenha("");
     setErro("");
     setNomeHospede("");
+    setSenhaEscolhida("");
   }
 
   return (
@@ -105,10 +115,35 @@ export default function Home() {
                 />
               </label>
 
+              <div className="campo">
+                <span>Senha (7 dígitos)</span>
+                <div className="senha-linha">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{7}"
+                    maxLength={7}
+                    value={senhaEscolhida}
+                    onChange={(e) => setSenhaEscolhida(e.target.value.replace(/\D/g, "").slice(0, 7))}
+                    placeholder="Ex.: 1122334"
+                    required
+                    disabled={estado === "carregando"}
+                  />
+                  <button
+                    type="button"
+                    className="botao-gerar"
+                    onClick={() => setSenhaEscolhida(gerarSenhaAleatoria())}
+                    disabled={estado === "carregando"}
+                  >
+                    🎲 Gerar
+                  </button>
+                </div>
+              </div>
+
               {estado === "erro" && <p className="mensagem-erro">{erro}</p>}
 
               <button type="submit" className="botao" disabled={estado === "carregando"}>
-                {estado === "carregando" ? "Gerando…" : "Gerar senha"}
+                {estado === "carregando" ? "Gerando…" : "Criar senha"}
               </button>
             </form>
           )}
@@ -149,149 +184,30 @@ export default function Home() {
           --branco: #fffdf9;
         }
 
-        * {
-          box-sizing: border-box;
-        }
-
-        html,
-        body {
-          margin: 0;
-          background: var(--bg);
-          color: var(--ink);
-          font-family: "Inter", -apple-system, sans-serif;
-        }
-
-        .pagina {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-        }
-
-        .cartao {
-          width: 100%;
-          max-width: 420px;
-          background: var(--branco);
-          border: 1px solid var(--linha);
-          border-radius: 18px;
-          padding: 36px 30px;
-        }
-
-        .cabecalho h1 {
-          font-family: "Fraunces", serif;
-          font-weight: 600;
-          font-size: 28px;
-          margin: 0 0 8px;
-          color: var(--verde-escuro);
-        }
-
-        .subtitulo {
-          margin: 0 0 28px;
-          color: var(--ink-soft);
-          font-size: 15px;
-          line-height: 1.5;
-          max-width: 34ch;
-        }
-
-        .formulario {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-        }
-
-        .campo {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          font-size: 14px;
-          color: var(--ink-soft);
-        }
-
-        .campo input {
-          font-family: "Inter", sans-serif;
-          font-size: 16px;
-          color: var(--ink);
-          padding: 12px 14px;
-          border-radius: 10px;
-          border: 1px solid var(--linha);
-          background: var(--bg);
-        }
-
-        .campo input:focus {
-          outline: 2px solid var(--verde);
-          outline-offset: 1px;
-        }
-
-        .botao {
-          font-family: "Inter", sans-serif;
-          font-size: 16px;
-          font-weight: 600;
-          padding: 13px 18px;
-          border-radius: 10px;
-          border: none;
-          cursor: pointer;
-          background: var(--verde);
-          color: var(--branco);
-          margin-top: 6px;
-        }
-
-        .botao:disabled {
-          opacity: 0.6;
-          cursor: default;
-        }
-
-        .botao-secundario {
-          background: var(--branco);
-          color: var(--verde-escuro);
-          border: 1px solid var(--verde);
-        }
-
-        .botao-texto {
-          background: transparent;
-          color: var(--ink-soft);
-          text-decoration: underline;
-        }
-
-        .mensagem-erro {
-          background: #f7e7e3;
-          color: var(--erro);
-          padding: 10px 12px;
-          border-radius: 8px;
-          font-size: 14px;
-          margin: 0;
-        }
-
-        .resultado {
-          text-align: center;
-        }
-
-        .resultado-legenda {
-          color: var(--ink-soft);
-          margin: 0 0 6px;
-          font-size: 14px;
-        }
-
-        .resultado-senha {
-          font-family: "Fraunces", serif;
-          font-weight: 600;
-          font-size: 52px;
-          letter-spacing: 6px;
-          color: var(--terra);
-          margin: 0 0 12px;
-        }
-
-        .resultado-validade {
-          color: var(--ink-soft);
-          font-size: 13px;
-          margin: 0 0 24px;
-        }
-
-        .acoes {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Inter", -apple-system, sans-serif; }
+        .pagina { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .cartao { width: 100%; max-width: 420px; background: var(--branco); border: 1px solid var(--linha); border-radius: 18px; padding: 36px 30px; }
+        .cabecalho h1 { font-family: "Fraunces", serif; font-weight: 600; font-size: 28px; margin: 0 0 8px; color: var(--verde-escuro); }
+        .subtitulo { margin: 0 0 28px; color: var(--ink-soft); font-size: 15px; line-height: 1.5; max-width: 34ch; }
+        .formulario { display: flex; flex-direction: column; gap: 18px; }
+        .campo { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-soft); }
+        .campo input { font-family: "Inter", sans-serif; font-size: 16px; color: var(--ink); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--linha); background: var(--bg); }
+        .campo input:focus { outline: 2px solid var(--verde); outline-offset: 1px; }
+        .senha-linha { display: flex; gap: 8px; }
+        .senha-linha input { flex: 1; min-width: 0; }
+        .botao-gerar { font-family: "Inter", sans-serif; font-size: 14px; font-weight: 600; padding: 0 12px; border-radius: 10px; border: 1px solid var(--verde); cursor: pointer; background: var(--branco); color: var(--verde-escuro); white-space: nowrap; }
+        .botao-gerar:disabled { opacity: 0.6; cursor: default; }
+        .botao { font-family: "Inter", sans-serif; font-size: 16px; font-weight: 600; padding: 13px 18px; border-radius: 10px; border: none; cursor: pointer; background: var(--verde); color: var(--branco); margin-top: 6px; }
+        .botao:disabled { opacity: 0.6; cursor: default; }
+        .botao-secundario { background: var(--branco); color: var(--verde-escuro); border: 1px solid var(--verde); }
+        .botao-texto { background: transparent; color: var(--ink-soft); text-decoration: underline; }
+        .mensagem-erro { background: #f7e7e3; color: var(--erro); padding: 10px 12px; border-radius: 8px; font-size: 14px; margin: 0; }
+        .resultado { text-align: center; }
+        .resultado-legenda { color: var(--ink-soft); margin: 0 0 6px; font-size: 14px; }
+        .resultado-senha { font-family: "Fraunces", serif; font-weight: 600; font-size: 52px; letter-spacing: 6px; color: var(--terra); margin: 0 0 12px; }
+        .resultado-validade { color: var(--ink-soft); font-size: 13px; margin: 0 0 24px; }
+        .acoes { display: flex; flex-direction: column; gap: 10px; }
       `}</style>
     </>
   );
