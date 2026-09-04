@@ -6,15 +6,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: "Método não permitido." });
   }
 
- 
   const { nomeHospede, entradaEpoch, saidaEpoch } = req.body || {};
 
- 
-    if (!nomeHospede || !entradaEpoch || !saidaEpoch) {
+  if (!nomeHospede || !entradaEpoch || !saidaEpoch) {
     return res.status(400).json({ erro: "Preencha nome, data/hora de entrada e de saída." });
   }
 
-  const effectiveTime = new Date(entradaEpoch * 1000); 
+  const effectiveTime = new Date(entradaEpoch * 1000);
   const invalidTime = new Date(saidaEpoch * 1000);
 
   if (Number.isNaN(effectiveTime.getTime()) || Number.isNaN(invalidTime.getTime())) {
@@ -25,7 +23,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const senha = await criarSenhaTemporaria({
+    const { senha } = await criarSenhaTemporaria({
       nomeHospede: nomeHospede.slice(0, 30),
       effectiveTime,
       invalidTime,
