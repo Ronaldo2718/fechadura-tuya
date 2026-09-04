@@ -1,4 +1,5 @@
 const { criarSenhaTemporaria } = require("../../lib/tuya");
+const { registrarSenhaNaPlanilha } = require("../../lib/sheets");
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -33,6 +34,13 @@ export default async function handler(req, res) {
       invalidTime,
       senhaEscolhida: senhaEscolhida || undefined,
     });
+
+    try {
+      await registrarSenhaNaPlanilha({ nomeHospede, senha, entrada: effectiveTime, saida: invalidTime });
+    } catch (erroPlanilha) {
+      console.error("Não foi possível registrar na planilha:", erroPlanilha);
+    }
+
     return res.status(200).json({ senha });
   } catch (e) {
     console.error("Erro ao criar senha Tuya:", e.tuyaResponse || e);
