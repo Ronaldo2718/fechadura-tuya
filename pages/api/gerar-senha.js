@@ -6,10 +6,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: "Método não permitido." });
   }
 
-  const { nomeHospede, entradaEpoch, saidaEpoch } = req.body || {};
+  const { nomeHospede, entradaEpoch, saidaEpoch, senha } = req.body || {};
 
-  if (!nomeHospede || !entradaEpoch || !saidaEpoch) {
-    return res.status(400).json({ erro: "Preencha nome, data/hora de entrada e de saída." });
+  if (!nomeHospede || !entradaEpoch || !saidaEpoch || !senha) {
+    return res.status(400).json({ erro: "Preencha nome, data/hora de entrada, saída e senha." });
+  }
+
+  if (!/^\d{7}$/.test(String(senha))) {
+    return res.status(400).json({ erro: "A senha precisa ter exatamente 7 dígitos numéricos." });
   }
 
   const effectiveTime = new Date(entradaEpoch * 1000);
@@ -23,12 +27,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { senha } = await criarSenhaTemporaria({
+    const { senha: senhaCriada } = await criarSenhaTemporaria({
       nomeHospede: nomeHospede.slice(0, 30),
       effectiveTime,
       invalidTime,
+      senha: String(senha),
     });
-    return res.status(200).json({ senha });
+    return res.status(200).json({ senha: senhaCriada });
   } catch (e) {
     console.error("Erro ao criar senha Tuya:", e.tuyaResponse || e);
     return res.status(502).json({
