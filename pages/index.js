@@ -12,6 +12,8 @@ export default function Home() {
   const [nomeHospede, setNomeHospede] = useState("");
   const [entrada, setEntrada] = useState(agoraLocalISO());
   const [saida, setSaida] = useState(agoraLocalISO(24 * 60));
+  const [modoSenha, setModoSenha] = useState("auto"); // "auto" | "escolher"
+  const [senhaEscolhida, setSenhaEscolhida] = useState("");
   const [estado, setEstado] = useState("idle"); // idle | carregando | sucesso | erro
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -19,6 +21,13 @@ export default function Home() {
 
   async function aoEnviar(e) {
     e.preventDefault();
+
+    if (modoSenha === "escolher" && !/^\d{7}$/.test(senhaEscolhida)) {
+      setErro("A senha precisa ter exatamente 7 dígitos numéricos.");
+      setEstado("erro");
+      return;
+    }
+
     setEstado("carregando");
     setErro("");
     setCopiado(false);
@@ -28,7 +37,12 @@ export default function Home() {
       const resp = await fetch("/api/gerar-senha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nomeHospede, entradaEpoch, saidaEpoch }),
+        body: JSON.stringify({
+          nomeHospede,
+          entradaEpoch,
+          saidaEpoch,
+          senhaEscolhida: modoSenha === "escolher" ? senhaEscolhida : undefined,
+        }),
       });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar a senha.");
@@ -52,6 +66,8 @@ export default function Home() {
     setSenha("");
     setErro("");
     setNomeHospede("");
+    setModoSenha("auto");
+    setSenhaEscolhida("");
   }
 
   return (
@@ -104,6 +120,44 @@ export default function Home() {
                   disabled={estado === "carregando"}
                 />
               </label>
+
+              <div className="campo">
+                <span>Senha</span>
+                <div className="opcoes-senha">
+                  <label className="opcao-radio">
+                    <input
+                      type="radio"
+                      name="modoSenha"
+                      checked={modoSenha === "auto"}
+                      onChange={() => setModoSenha("auto")}
+                      disabled={estado === "carregando"}
+                    />
+                    Gerar automaticamente
+                  </label>
+                  <label className="opcao-radio">
+                    <input
+                      type="radio"
+                      name="modoSenha"
+                      checked={modoSenha === "escolher"}
+                      onChange={() => setModoSenha("escolher")}
+                      disabled={estado === "carregando"}
+                    />
+                    Escolher a senha
+                  </label>
+                </div>
+                {modoSenha === "escolher" && (
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={7}
+                    value={senhaEscolhida}
+                    onChange={(e) => setSenhaEscolhida(e.target.value.replace(/\D/g, ""))}
+                    placeholder="7 dígitos, ex.: 1234567"
+                    required
+                    disabled={estado === "carregando"}
+                  />
+                )}
+              </div>
 
               {estado === "erro" && <p className="mensagem-erro">{erro}</p>}
 
@@ -216,6 +270,25 @@ export default function Home() {
           border-radius: 10px;
           border: 1px solid var(--linha);
           background: var(--bg);
+        }
+
+        .opcoes-senha {
+          display: flex;
+          gap: 18px;
+          margin-bottom: 4px;
+        }
+
+        .opcao-radio {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          color: var(--ink);
+          cursor: pointer;
+        }
+
+        .opcao-radio input {
+          width: auto;
         }
 
         .campo input:focus {

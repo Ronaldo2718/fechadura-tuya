@@ -6,10 +6,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: "Método não permitido." });
   }
 
-  const { nomeHospede, entradaEpoch, saidaEpoch } = req.body || {};
+  const { nomeHospede, entradaEpoch, saidaEpoch, senhaEscolhida } = req.body || {};
 
   if (!nomeHospede || !entradaEpoch || !saidaEpoch) {
     return res.status(400).json({ erro: "Preencha nome, data/hora de entrada e de saída." });
+  }
+
+  if (senhaEscolhida && !/^\d{7}$/.test(senhaEscolhida)) {
+    return res.status(400).json({ erro: "A senha precisa ter exatamente 7 dígitos numéricos." });
   }
 
   const effectiveTime = new Date(entradaEpoch * 1000);
@@ -27,6 +31,7 @@ export default async function handler(req, res) {
       nomeHospede: nomeHospede.slice(0, 30),
       effectiveTime,
       invalidTime,
+      senhaEscolhida: senhaEscolhida || undefined,
     });
     return res.status(200).json({ senha });
   } catch (e) {
