@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Head from "next/head";
 
 function agoraLocalISO(offsetMinutos = 0) {
@@ -9,6 +9,8 @@ function agoraLocalISO(offsetMinutos = 0) {
 }
 
 export default function Home() {
+  const [studios, setStudios] = useState([]);
+  const [studioId, setStudioId] = useState("");
   const [nomeHospede, setNomeHospede] = useState("");
   const [entrada, setEntrada] = useState(agoraLocalISO());
   const [saida, setSaida] = useState(agoraLocalISO(24 * 60));
@@ -19,8 +21,24 @@ export default function Home() {
   const [erro, setErro] = useState("");
   const [copiado, setCopiado] = useState(false);
 
+  useEffect(() => {
+    fetch("/api/studios")
+      .then((r) => r.json())
+      .then((dados) => {
+        setStudios(dados.studios || []);
+        if (dados.studios?.length === 1) setStudioId(dados.studios[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
   async function aoEnviar(e) {
     e.preventDefault();
+
+    if (!studioId) {
+      setErro("Escolha o studio.");
+      setEstado("erro");
+      return;
+    }
 
     if (modoSenha === "escolher" && !/^\d{7}$/.test(senhaEscolhida)) {
       setErro("A senha precisa ter exatamente 7 dígitos numéricos.");
@@ -38,6 +56,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          studioId,
           nomeHospede,
           entradaEpoch,
           saidaEpoch,
@@ -87,6 +106,25 @@ export default function Home() {
 
           {estado !== "sucesso" && (
             <form onSubmit={aoEnviar} className="formulario">
+              <label className="campo">
+                <span>Studio</span>
+                <select
+                  value={studioId}
+                  onChange={(e) => setStudioId(e.target.value)}
+                  required
+                  disabled={estado === "carregando"}
+                >
+                  <option value="" disabled>
+                    Selecione…
+                  </option>
+                  {studios.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <label className="campo">
                 <span>Nome do hóspede</span>
                 <input
@@ -262,7 +300,8 @@ export default function Home() {
           color: var(--ink-soft);
         }
 
-        .campo input {
+        .campo input,
+        .campo select {
           font-family: "Inter", sans-serif;
           font-size: 16px;
           color: var(--ink);
@@ -291,7 +330,8 @@ export default function Home() {
           width: auto;
         }
 
-        .campo input:focus {
+        .campo input:focus,
+        .campo select:focus {
           outline: 2px solid var(--verde);
           outline-offset: 1px;
         }

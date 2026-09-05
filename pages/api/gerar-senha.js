@@ -7,10 +7,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: "Método não permitido." });
   }
 
-  const { nomeHospede, entradaEpoch, saidaEpoch, senhaEscolhida } = req.body || {};
+  const { nomeHospede, entradaEpoch, saidaEpoch, senhaEscolhida, studioId } = req.body || {};
 
-  if (!nomeHospede || !entradaEpoch || !saidaEpoch) {
-    return res.status(400).json({ erro: "Preencha nome, data/hora de entrada e de saída." });
+  if (!nomeHospede || !entradaEpoch || !saidaEpoch || !studioId) {
+    return res.status(400).json({ erro: "Preencha studio, nome, data/hora de entrada e de saída." });
   }
 
   if (senhaEscolhida && !/^\d{7}$/.test(senhaEscolhida)) {
@@ -28,15 +28,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { senha } = await criarSenhaTemporaria({
+    const { senha, nomeStudio } = await criarSenhaTemporaria({
       nomeHospede: nomeHospede.slice(0, 30),
       effectiveTime,
       invalidTime,
       senhaEscolhida: senhaEscolhida || undefined,
+      studioId,
     });
 
     try {
-      await registrarSenhaNaPlanilha({ nomeHospede, senha, entrada: effectiveTime, saida: invalidTime });
+      await registrarSenhaNaPlanilha({
+        nomeStudio,
+        nomeHospede,
+        senha,
+        entrada: effectiveTime,
+        saida: invalidTime,
+      });
     } catch (erroPlanilha) {
       console.error("Não foi possível registrar na planilha:", erroPlanilha);
     }
@@ -45,10 +52,9 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error("Erro ao criar senha Tuya:", e.tuyaResponse || e);
     return res.status(502).json({
-      erro:
-        e.tuyaCode
-          ? `A Tuya recusou o pedido (código ${e.tuyaCode}): ${e.message}`
-          : e.message || "Falha ao gerar a senha na fechadura.",
+      erro: e.tuyaCode
+        ? `A Tuya recusou o pedido (código ${e.tuyaCode}): ${e.message}`
+        : e.message || "Falha ao gerar a senha na fechadura.",
     });
   }
 }
